@@ -1,23 +1,16 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[135]:
-
 
 import numpy as np
-import matplotlib.pyplot as plt
-
-
-# In[2]:
-
 
 def pivot(polymer, n):
-    pivotp = np.random.randint(n-1)+1
-    angle = np.random.randint(3)
-    direction = np.random.randint(2)
+    pivotp = np.random.randint(n-1)+1 # point about which it pivots
+    angle = np.random.randint(3) # angle of the rotation 0=90 , 1 = -90, 2 = 180
+    direction = np.random.randint(2) # direction up or down polymer that gets rotated
     if (direction == 0):
-        pivotv = np.zeros((pivotp,2))
-        test = np.zeros((n-pivotp,2))
+        pivotv = np.zeros((pivotp,2)) #the vector that will be rotated
+        test = np.zeros((n-pivotp,2)) # the remaining portion of the polymer 
         np.copyto(pivotv,polymer[:pivotp])
         np.copyto(test,polymer[pivotp:])
     else:
@@ -26,8 +19,10 @@ def pivot(polymer, n):
         np.copyto(pivotv,polymer[pivotp:])
         np.copyto(test,polymer[:pivotp])
     
+    # changes the axis
     pivotv = pivotv - polymer[pivotp]
     
+    # rotates the polymer
     if(angle == 0):
         pivotv = np.fliplr(pivotv)
         pivotv = pivotv * [-1,1]
@@ -37,90 +32,18 @@ def pivot(polymer, n):
     elif(angle == 2):
         pivotv = pivotv * -1
     
+    # change the axis back 
     pivotv = pivotv + polymer[pivotp]
 
     if (direction == 0):   #append to polymer
         x = np.insert(test,0,pivotv,axis=0)
     else:
         x = np.append(test,pivotv,axis=0)
+    
+    # check for number of unique points 
     if (np.unique(x,axis=0).size == x.size):
         return x
     else:
         return polymer
 
-    
-
-
-# In[141]:
-
-
-y = np.array([[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[9,0]])
-
-
-# In[160]:
-
-
-def multirun(y,n):
-    a = pivot(y,n)
-    for x in range(0,10):
-         a = pivot(a,n)
-    print(a)
-
-
-# In[157]:
-
-
-def arraybuild(n):
-    y = np.array([[0,0]])
-    for x in range(1,n):
-        y = np.append(y,np.array([[0,x]]),axis=0)
-    return y
-
-
-# In[161]:
-
-
-multirun(arraybuild(100),100)
-
-
-# In[ ]:
-
-
-
-
-
-# In[146]:
-
-
-multirun()
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
+ 
