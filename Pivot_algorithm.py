@@ -4,7 +4,8 @@
 
 import numpy as np
 
-def pivot(polymer, n):
+def pivot(polymer):
+    n= len(polymer)
     pivotp = np.random.randint(n-1)+1 # point about which it pivots
     angle = np.random.randint(3) # angle of the rotation 0=90 , 1 = -90, 2 = 180
     direction = np.random.randint(2) # direction up or down polymer that gets rotated
