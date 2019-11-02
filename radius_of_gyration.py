@@ -17,7 +17,7 @@ def radius_gyration(poly_array):
   center = (sum(x)/len(poly_array), sum(y)/len(poly_array))
   center_array = np.array(center)
   dist_center = dist.cdist(poly_array, center_array[np.newaxis,:], 'euclidean')
-  radius_gyration = np.mean(dist_center, 0)
-  return radius_gyration
+  radius_gyration_dist = np.mean(dist_center, 0)
+  return radius_gyration_dist
 
 print(radius_gyration(poly_array))
