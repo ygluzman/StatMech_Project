@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import numpy as np
+for i in range():
+    poly_piv=pivot(poly)#generating polymer configuration
+    poly_rep=rep(poly)
+    rg_piv[i]=radius_gyration(poly_piv)#calculating Rg
+    end_piv[i]=end_to_end(poly_piv)#calculating end to end distance
+    rg_rep[i]=radius_gyration(poly_rep)
+    end_rep[i]=end_to_end(poly_rep)
+    #print the standard deviation
+print("st_rg_piv="st(rg_piv),"st_rg_rep="st(rg_rep),"st_end_piv="st(end_piv),"st_end_rep="st(end_rep))
+
+#define the function to calculate the standard deviation
+def st(value_array)
+value_array_mean=sum(value_array,0)/value_array.size
+sum_d=0
+for i in range():
+    d_value_array=np.square(value_array[i]-value_array_mean)
+    sum_d+=d_value_array
+st=np.sqr(sum_d/(value_array.size-1))
+return st
