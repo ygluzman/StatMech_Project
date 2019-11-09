@@ -30,6 +30,9 @@ class grid:
         Makes a grid centered on the CoM
         with height and width 4x the distance of the furthest point from the CoM
         """
+
+        poly = polymer
+
         #Settings for image:
         self.size_of_pixel_array=1000
         white=(255,255,255)
@@ -38,21 +41,21 @@ class grid:
         black=(0,0,0)
 
         #Make a RGB white image:
-        img=Image.new('RGB',(size_of_pixel_array,size_of_pixel_array))
+        img=Image.new('RGB',(self.size_of_pixel_array,self.size_of_pixel_array))
         pixels=img.load()
         for i in range(0,img.size[0]):
             for j in range(0,img.size[1]):
                 pixels[i,j] = white
 
         #Calculate CoM of polymer:
-        CoM = np.sum(poly,axis=0)//poly.size #Calculate centroid/center of mass
+        CoM = np.sum(poly,axis=0)//len(poly) #Calculate centroid/center of mass
         #Floor dividing :)
 
         #Calculate distances from CoM to make appropriate gridding
         distances_from_CoM = np.sqrt(np.sum(((poly - CoM)**2),axis=1))
         max_dist = distances_from_CoM.max()
         size_of_grid = 4*max_dist
-        periodicity = size_of_pixel_array//size_of_grid
+        periodicity = self.size_of_pixel_array//size_of_grid
         for i in range(0,img.size[0]):
             for j in range(0,img.size[1]):
                 if (i%periodicity == 0) or (j%periodicity == 0):
@@ -64,21 +67,11 @@ class grid:
         self.CoM = CoM
         self.pixels_between_gridpoints = periodicity
         self.CoIm = [int(size_of_grid//2*self.pixels_between_gridpoints),int(size_of_grid//2*self.pixels_between_gridpoints)]
-
-    def re_center(self,polymer):
-        """
-        Re-centers the polymer by calculating it's center of mass when it moves off-screen
-        """
-        self.CoM = np.sum(polymer,axis=0)//polymer.size
         
     def plot_poly(self,polymer):
         """
         Takes a polymer array, returns the polymer plotted onto a grid as an image
         """
-        
-        #Center the polymer around the CoM in order to plot
-        poly = polymer-self.CoM
-#         print(self.CoM,self.pixels_between_gridpoints,self.CoIm)
     
         #Settings
         black=(0,0,0)
@@ -90,30 +83,59 @@ class grid:
             point_width = [-3,-2,-1,0,1,2,3]
         else:
             point_width = [-1,0,1]
+
+        #Center the polymer around the CoM in order to plot
+        poly = polymer-self.CoM
+        pixel_locations = np.ones([len(poly),2])
+        pixel_locations[:,0] = self.CoIm[0]
+        pixel_locations[:,1] = self.CoIm[1]
+        pixel_locations = pixel_locations + poly*self.pixels_between_gridpoints
+
+        #Check if any lie out of range and re-center if so:
+        test = pixel_locations + self.pixels_between_gridpoints
+        check = test >= self.size_of_pixel_array
+        if check.any():
+            print("Re-centering, hit max!")
+            self.CoM = np.sum(polymer,axis=0)//len(polymer)
+            poly = polymer-self.CoM
+            # print(polymer)
+            # print(self.CoM)
+            # print(poly)
+            pixel_locations = np.ones([len(poly),2])
+            pixel_locations[:,0] = self.CoIm[0]
+            pixel_locations[:,1] = self.CoIm[1]
+            pixel_locations = pixel_locations + poly*self.pixels_between_gridpoints
+            # print(pixel_locations)
+
+        test = pixel_locations - self.pixels_between_gridpoints
+        check = test <= 0
+        if check.any():
+            print("Re-centering, hit 0!")
+            self.CoM = np.sum(polymer,axis=0)//len(polymer)
+            # print(polymer)
+            # print(self.CoM)
+            # print(poly)
+            poly = polymer-self.CoM
+            pixel_locations = np.ones([len(poly),2])
+            pixel_locations[:,0] = self.CoIm[0]
+            pixel_locations[:,1] = self.CoIm[1]
+            pixel_locations = pixel_locations + poly*self.pixels_between_gridpoints
+            # print(pixel_locations)          
                 
         #Draw the Polymer!
         for atom_number in range(0,len(poly)):
             
-            #Some set-up
+            #Set-up
             atom = poly[atom_number]
             try:
                 next_atom = poly[atom_number + 1]
             except IndexError:
                 pass
 
-            loc_x = self.CoIm[0] + atom[0]*self.pixels_between_gridpoints
-            loc_y = self.CoIm[1] + atom[1]*self.pixels_between_gridpoints
-            
-            if (loc_x > self.size_of_pixel_array) or (loc_y > self.size_of_pixel_array):
-                self.re_center(polymer)
-                img = self.plot_poly(polymer)
-                return img
-            elif (loc_x < 0) or (loc_y < 0):
-                self.re_center(polymer)
-                img = self.plot_poly(polymer)
-                return img    
-            
-#             print(loc_x,loc_y)
+            loc_x = pixel_locations[atom_number][0]
+            loc_y = pixel_locations[atom_number][1]
+
+            # print(loc_x,loc_y)
             
             #Fill in the point
             for i in point_width:
@@ -139,7 +161,7 @@ class grid:
 #                     print("Right!")
                     for i in range(1,int(self.pixels_between_gridpoints)):
                         pixels[loc_x + i, loc_y] = black
-                elif (diff[0] == -1) and (diff[1] == 1):
+                elif (diff[0] == -1) and (diff[1] == 0):
 #                     print("Left!")
                     for i in range(1,int(self.pixels_between_gridpoints)):
                         pixels[loc_x - i, loc_y] = black
