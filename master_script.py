@@ -1,4 +1,5 @@
-from PIL import Image
+#Import libraries
+from PIL import Image, ImageFont, ImageDraw
 import numpy as np
 import os
 import glob
@@ -6,43 +7,242 @@ import glob
 #Import functions 
 import imaging
 from Pivot_algorithm import pivot
+from radius_of_gyration import radius_gyration, radius_of_gyration
+from lamilar import lamilar_test,generate_coblock_charges
+from Reptation import reptation
+from end_to_end import end_to_end
+from initialization import init
+import matplotlib.pyplot as plt
 
 img_number = 0
+img_directory = "generated_images"
 
 def save_img(img):
+    """
+    Saves image to "generated_images" directory
+    Keeps track of how many images you have generated to label them differently
+    """
     global img_number
-    directory = "generated_images"
+    global img_directory
     img_number += 1
-    img.save(directory + "/polymer_" + str(img_number) + ".jpg")
+    img.save(img_directory + "/polymer_" + str(img_number) + ".jpg")
     
+def make_gif(n_moves,output_directory):
+    """
+    Makes gif from images in 'generated_images' with imagemagick in command line
+    You will need to first install imagemagick; see online for details
+    """
+    cmd = 'convert -resize 20% -delay 4 -loop 0 ' + img_directory + '/polymer_{1..' + str(n_moves+1) + '}.jpg ' + output_directory + '/generated_gif.gif'
+    os.system(cmd)
+
+def prepare_gif_process():
+    """
+    Creates some directories for gif generation and cleans up from the previous run
+    """
+    global img_directory
+    try:
+        os.mkdir(img_directory)
+    except FileExistsError:
+        #Clears all previous images
+        for image in glob.glob(img_directory + "/*"):
+            os.remove(image)
+        pass
+
+def plot(array,title,output_directory):
+    move_numbers = np.linspace(0, array.shape[0], array.shape[0])
+    plt.clf()
+    plt.plot(move_numbers, array, 'o', markersize=0.5, color='black');
+    plt.title(title)
+    plt.savefig(output_directory + "/" + title + '.png')
+
+def avg_std(array,n_points):
+    last_points_array = array[-1:-n_points:-1]
+    avg = np.mean(last_points_array)
+    std_dev = last_points_array - avg
+    std_dev = std_dev ** 2
+    std_dev = np.mean(std_dev)
+    std_dev = np.sqrt(std_dev)
+    return avg, std_dev
+
+
+def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None,field=1,output_directory=None):
+    """
+    Runs a simulation with specified move type and number of moves
+
+    Arguments:
+    move_type -- pivot or reptation
+    n_moves -- number of moves in simulation
+    length_poly -- number of monomers in the polymer
+    generate_gif -- generate images of each step and make a gif at the end of execution (takes a while)
+    lamilar
+    """
+
+    if output_directory == None:
+        print("Error! Output directory not specified. Exiting...")
+        exit(1)
+
+    #Check if move type is valid
+    if move_type not in ['reptation','pivot']:
+        print("Move type is not reptation or pivot... exiting")
+        exit(1)
+
+    if lamilar == True:
+        if temp == None:
+            print("Lamilar field requires a temperature. Please specify (temp = ...). Exiting...")
+            exit(1)
+
+    #Prepare gif process
+    if generate_gif == True:
+        prepare_gif_process()
+
+    #Initialize polymer and grid
+    poly = init(length_poly)
+    grid = imaging.grid(poly)
+
+    #Initialize arrays to store energy, gyradius and end2end distance
+    energies = np.empty(0)
+    gyradii = np.empty(0)
+    end2ends = np.empty(0)
+
+    if lamilar == True:
+        charges = generate_coblock_charges(poly.shape[0])
+
+    #Run algorithm:
+    for i in range(0,n_moves+1):
+
+        if lamilar == True:
+            poly1 = poly
+
+        if move_type == 'reptation':
+            poly = reptation(poly)
+        else: 
+            poly = pivot(poly)
+
+        #lamilar called with polymer1, polymer2, charges, temp, field=1
+        if lamilar == True:
+            poly2 = poly
+            poly, energy = lamilar_test(poly1,poly2,charges,temp,field=field)
+
+        #Calculate observables
+        if lamilar != True:
+            energy = 0
+
+        gyradius = radius_of_gyration(poly)
+        end2end = end_to_end(poly)
+
+        #Append observables to array
+        energies = np.append(energies,np.array([energy]))
+        gyradii = np.append(gyradii,np.array([gyradius]))
+        # print(gyradii)
+        end2ends = np.append(end2ends,np.array([end2end]))
+        # print(end2ends)
+
+        #Save images only if requested
+        if generate_gif == True:
+            if lamilar == True:
+                img = grid.plot_poly(poly,energy=energy,gyradius=np.round(gyradius,2),end2end=np.round(end2end,2),lamilar=True,charges=charges)
+            else:
+                img = grid.plot_poly(poly,energy=energy,gyradius=np.round(gyradius,2),end2end=np.round(end2end,2))
+            save_img(img)
+
+
+    #Debug
+    # print(gyradii)
+    # print(end2ends)
+
+    #Generate plots of observables over the algorithm
+    plot(energies,"Energy",output_directory)
+    plot(gyradii,"Radius of Gyration",output_directory)
+    plot(end2ends,"End to End Length",output_directory)
+
+    #Calculate averages and standard deviations of observables from the last 500 moves
+    #Edit later base off of observed equilibration time
+    avg_energy, std_energy = avg_std(energies,500)
+    avg_gyradius, std_gyradius = avg_std(gyradii,500)
+    avg_end2end, std_end2end = avg_std(end2ends,500)
+
+    #Print mean and standard deviation to output file
+    output_name = output_directory + "/output.txt"
+
+    #Remove previous output if it exists
+    try:
+        os.remove(output_name)
+    except FileNotFoundError:
+        pass
+
+    #Write to output file    
+    with open(output_directory + "/output.txt", 'w+') as file:
+        file.write("POLYSIM" + "\n")
+        file.write("A Software by Abhishek, Daniel, Yogev, Peter, and Caini" + "\n")
+        file.write("\n")
+
+        file.write("SIMULATION ACHIEVED" + "\n")
+        file.write("########################" + "\n")
+        file.write("Average energy: " + str(avg_energy) + "\n")
+        file.write("Average radius of gyration: " + str(avg_gyradius) + "\n")
+        file.write("Average end to end: " + str(avg_end2end) + "\n")
+        file.write("########################" + "\n")
+        file.write("Std deviation of energy: " + str(std_energy) + "\n")
+        file.write("Std deviation of radius of gyration: " + str(std_gyradius) + "\n")
+        file.write("Std deviation of end to end distance: " + str(std_end2end) + "\n")
+        file.write("########################" + "\n")
+        file.write("\n")
+
+        file.write("NORMAL TERMINATION" + "\n")
+        file.write("THANK YOU FOR USING OUR SOFTWARE" + "\n")
+        file.write("\n")
+        file.write("\n")
+        file.write("\n")
+
+    #Generate gif with terminal command if requested
+    #This will take a while if you have many images (~2-3 minutes for 1000 images)
+    if generate_gif:
+        print("Simualation done! Generating gif (this might take a while (2-3 minutes))...")
+        make_gif(n_moves,output_directory)
+
 
 def main():
-    #Remove images from previous runs
-    for image in glob.glob("generated_images/*"):
-        os.remove(image)
+    #Seed if you want
+    # np.random.seed(34)
 
-    np.random.seed(34)
+    ########################
+    ###### IMPORTANT #######
+    # USER MUST EDIT BELOW #
+    ########################
 
-    #Initialize array
-    poly=np.array([0,0])
-    length=25
-    for i in range(1,int(length/2+1)):
-        poly = np.vstack((poly,[i,0]))
-    for i in [i for i in range(-(int(length/2)),0)][::-1]: #from -5 to zero backwards
-        poly = np.vstack(([i,0],poly))
+    #Define output directory:
+    output_directory = "reptation_test_size20"
 
-    #Initialize grid
-    grid = imaging.grid(poly)
-    img = grid.plot_poly(poly)
+    #Settings:
+    move_type = 'reptation'
+    n_moves = 1000 # At least 600 please
+    length_poly = 20
+    lamilar = False
+    temp = 20 #Check at different temperatures for lamilar fields, ~10 should be about fine
+    field_strength = 1
 
-    #Do some pivot moves!
-    for i in range(0,1001):
-        poly = pivot(poly,len(poly))
-        img = grid.plot_poly(poly)
-        save_img(img)
+    #Generate a gif? Takes 2-3 minutes more on execution
+    generate_gif = True
 
+    #Note: Currently output values (radius of gyration, end to end, etc.) are taken from the last 500 points of execution
+    # So it is important to have at least ~700 points in your step (more/less depending on temperature and size of polymer)
 
-if __name__ == "__main__":
+    #####################
+    # STOP EDITING HERE #
+    #####################
+
+    try:
+        os.mkdir(output_directory)
+    except FileExistsError:
+        pass
+
+    global img_directory
+    img_directory = output_directory + "/generated_images"
+
+    #run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None,field=1)
+    run(move_type = move_type ,n_moves = n_moves, length_poly = length_poly, generate_gif = generate_gif, lamilar = lamilar, temp = temp, field = field_strength, output_directory = output_directory)
+
+if __name__ == "__main__":  
     main()
 
 

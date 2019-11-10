@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageFont, ImageDraw
 import numpy as np
 
 #Import test
@@ -11,7 +11,8 @@ class grid:
     """
     Grid Class
     Initializes with a polymer. E.g. x=grid(poly)
-    Makes a grid centered on the CoM with height and width 4x the distance of the furthest point from the CoM
+    Makes a grid centered on the CoM of a polymer with height and width 4x
+    the distance of the furthest point from the CoM
     
     Plot polymers with method self.plot_poly
     Ex. img=self.plot_poly(poly)
@@ -19,9 +20,12 @@ class grid:
     Instance variables:
     self.size_of_pixel_array -- size of square pixel array (1000)
     self.blank_grid -- image of blank grid
+    self.pixels -- pixel access to the blank grid
     self.pixels_between_gridpoints -- number of pixels from one gridpoint to another
-    self.CoM -- previous center of mass (used for continuity between images)
-    self.CoIm -- center of image, where the CoM lies in the pixel array
+    self.CoIm -- a grid point near the center of the pixel array
+    
+    #Unused
+    self.CoM -- previous center of mass (was used for continuity between images)
     """
     
     def make_grid(self,polymer):
@@ -65,16 +69,67 @@ class grid:
         #Assign blank grid, CoM, and CoIm
         self.blank_grid = img
         self.CoM = CoM
+        self.pixels= self.blank_grid.load()
         self.pixels_between_gridpoints = periodicity
         self.CoIm = [int(size_of_grid//2*self.pixels_between_gridpoints),int(size_of_grid//2*self.pixels_between_gridpoints)]
+
+    def write(self,text,x,y):
+        color = 'rgb(0, 0, 0)' # black color
+        font = ImageFont.truetype('./fonts/OpenSans-Regular.ttf', 18) #load the font
+        draw = ImageDraw.Draw(self.blank_grid)
+        pos = (x,y)
+        draw.text(pos, text, fill=color, font=font)
+    
+    def write_info(self,energy,gyradius,end2end):
         
-    def plot_poly(self,polymer):
+        #Draw a rectangle on the grid
+        xstart=25
+        xstop=225
+        ystart=25
+        ystop=165
+        for i in range(xstart,xstop+1):
+            for j in range(ystart,ystop+1):
+                if (i==xstart) or (j==ystart) or (i==xstop) or (j==ystop):
+                    self.pixels[i,j] = (0,0,0)
+                else: 
+                    self.pixels[i,j] = (255,255,255)
+
+        spacing = 50
+        x=30
+        y=30
+        if energy != None:
+            self.write("Energy: " + str(np.round(energy,5)),x,y)
+        else:
+            self.write("Energy: N/A",x,y)
+        if gyradius != None:
+            self.write("Gyradius: " + str(np.round(gyradius,5)),x,y+spacing)
+        else:
+            self.write("Gyradius: None",x,y+spacing)
+        if end2end != None:
+            self.write("End to End: " + str(np.round(end2end,5)),x,y+2*spacing)
+        else:
+            self.write("End to End: None",x,y+2*spacing)
+
+
+    def plot_poly(self,polymer,energy=None,gyradius=None,end2end=None,info=True,lamilar=False,charges=None):
         """
         Takes a polymer array, returns the polymer plotted onto a grid as an image
+        Centered around the midpoint of the polymer
+
+        If lamilar=True, will show polymer in color
+        Must also pass a "charges" argument
+        Positive --> Blue
+        Negative --> Red
+        Neutral --> Black
         """
+        
+        if info == True:
+            self.write_info(energy,gyradius,end2end)
     
         #Settings
-        black=(0,0,0)
+        black = (0,0,0)
+        blue = (0,0,255)
+        red = (255,0,0)
         img = self.blank_grid.copy()
         pixels = img.load()
 #         point_width = [-1,0,1]
@@ -84,43 +139,15 @@ class grid:
         else:
             point_width = [-1,0,1]
 
-        #Center the polymer around the CoM in order to plot
-        poly = polymer-self.CoM
-        pixel_locations = np.ones([len(poly),2])
+        #Center the polymer around the midpoint in order to plot
+        midpoint = polymer[int(polymer.shape[0]//2)]
+        poly = polymer-midpoint
+        
+        #Make pixel locations
+        pixel_locations = np.empty([len(poly),2])
         pixel_locations[:,0] = self.CoIm[0]
         pixel_locations[:,1] = self.CoIm[1]
-        pixel_locations = pixel_locations + poly*self.pixels_between_gridpoints
-
-        #Check if any lie out of range and re-center if so:
-        test = pixel_locations + self.pixels_between_gridpoints
-        check = test >= self.size_of_pixel_array
-        if check.any():
-            print("Re-centering, hit max!")
-            self.CoM = np.sum(polymer,axis=0)//len(polymer)
-            poly = polymer-self.CoM
-            # print(polymer)
-            # print(self.CoM)
-            # print(poly)
-            pixel_locations = np.ones([len(poly),2])
-            pixel_locations[:,0] = self.CoIm[0]
-            pixel_locations[:,1] = self.CoIm[1]
-            pixel_locations = pixel_locations + poly*self.pixels_between_gridpoints
-            # print(pixel_locations)
-
-        test = pixel_locations - self.pixels_between_gridpoints
-        check = test <= 0
-        if check.any():
-            print("Re-centering, hit 0!")
-            self.CoM = np.sum(polymer,axis=0)//len(polymer)
-            # print(polymer)
-            # print(self.CoM)
-            # print(poly)
-            poly = polymer-self.CoM
-            pixel_locations = np.ones([len(poly),2])
-            pixel_locations[:,0] = self.CoIm[0]
-            pixel_locations[:,1] = self.CoIm[1]
-            pixel_locations = pixel_locations + poly*self.pixels_between_gridpoints
-            # print(pixel_locations)          
+        pixel_locations = pixel_locations + poly*self.pixels_between_gridpoints     
                 
         #Draw the Polymer!
         for atom_number in range(0,len(poly)):
@@ -135,15 +162,24 @@ class grid:
             loc_x = pixel_locations[atom_number][0]
             loc_y = pixel_locations[atom_number][1]
 
-            # print(loc_x,loc_y)
-            
+            #If lamilar = true, define the color
+            if lamilar == True:
+                if charges[atom_number] > 0:
+                    color_of_square = blue
+                elif charges[atom_number] < 0:
+                    color_of_square = red
+                else:
+                    color_of_square = black
+            else:
+                color_of_square = black
+
             #Fill in the point
             for i in point_width:
                 for j in point_width:
 #                     print(loc_x+i,loc_y+j)
-                    pixels[loc_x + i, loc_y + j] = black
+                    pixels[loc_x + i, loc_y + j] = color_of_square
              
-            #Conenect the dots! lol
+            #Connect the dots! lol
             if atom_number != len(poly)-1:
                 #The next point will either be to the left, right, up, or down
                 #We want to fill in the pixels in-between
