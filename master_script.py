@@ -191,7 +191,7 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
         file.write("Laminar field: ")
         if lamilar == True:
             file.write("ON" + "\n")
-            file.write("Field Strength: " + field_strength + "\n")
+            file.write("Field Strength: " + str(field) + "\n")
         else:
             file.write("OFF" + "\n")
 
@@ -234,22 +234,22 @@ def main():
     ########################
 
     #Define output directory:
-    output_directory = "pivot_test_size400_10000"
+    output_directory = "pivot_laminar_1000"
 
     #Settings:
     move_type = 'pivot'
-    n_moves = 10000 # At least 600 please
-    length_poly = 400
-    laminar = False
-    temp = 400 #Check at different temperatures for lamilar fields, ~10 should be about fine
+    n_moves = 1000
+    length_poly = 250
+    laminar = True
+    temp = 10
     field_strength = 1
 
     #Generate a gif? Takes 2-3 minutes more on execution
     #Also takes a lot of time to generate images
     generate_gif = False
 
-    #Note: Currently output values (radius of gyration, end to end, etc.) are taken from the last 500 points of execution
-    # So it is important to have at least ~700 points in your step (more/less depending on temperature and size of polymer)
+    #Note: Values in output are from sample of n_moves//2 points. Be sure to equilibrate at least over
+    # twice the time it takes your system to equilibrate
 
     #####################
     # STOP EDITING HERE #
