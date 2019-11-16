@@ -58,7 +58,7 @@ class grid:
         #Calculate distances from CoM to make appropriate gridding
         distances_from_CoM = np.sqrt(np.sum(((poly - CoM)**2),axis=1))
         max_dist = distances_from_CoM.max()
-        size_of_grid = 4*max_dist
+        size_of_grid = 2.5*max_dist
         periodicity = self.size_of_pixel_array//size_of_grid
         for i in range(0,img.size[0]):
             for j in range(0,img.size[1]):
