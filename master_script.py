@@ -63,7 +63,8 @@ def avg_std(array,n_points):
     std_dev = std_dev ** 2
     std_dev = np.mean(std_dev)
     std_dev = np.sqrt(std_dev)
-    return avg, std_dev
+    sem = std_dev/n_points
+    return avg, std_dev, sem
 
 
 def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None,field=1,output_directory=None):
@@ -164,9 +165,9 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
     #Calculate averages and standard deviations of observables from the last 500 moves
     #Edit later base off of observed equilibration time
     points_sampled = n_moves//2
-    avg_energy, std_energy = avg_std(energies,points_sampled)
-    avg_gyradius, std_gyradius = avg_std(gyradii,points_sampled)
-    avg_end2end, std_end2end = avg_std(end2ends,points_sampled)
+    avg_energy, std_energy, sem_energy = avg_std(energies,points_sampled)
+    avg_gyradius, std_gyradius, sem_gyradius = avg_std(gyradii,points_sampled)
+    avg_end2end, std_end2end, sem_end2end = avg_std(end2ends,points_sampled)
 
     #Print mean and standard deviation to output file
     output_name = output_directory + "/output.txt"
@@ -204,6 +205,10 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
         file.write("Std deviation of radius of gyration: " + str(std_gyradius) + "\n")
         file.write("Std deviation of end to end distance: " + str(std_end2end) + "\n")
         file.write("########################" + "\n")
+        file.write("Std error of energy: " + str(sem_energy) + "\n")
+        file.write("Std error of radius of gyration: " + str(sem_gyradius) + "\n")
+        file.write("Std error of end to end distance: " + str(sem_end2end) + "\n")
+        file.write("########################" + "\n")
         file.write("\n")
 
         file.write("NORMAL TERMINATION" + "\n")
@@ -229,18 +234,19 @@ def main():
     ########################
 
     #Define output directory:
-    output_directory = "pivot_test_size400"
+    output_directory = "pivot_test_size400_10000"
 
     #Settings:
     move_type = 'pivot'
-    n_moves = 100 # At least 600 please
-    length_poly = 500
+    n_moves = 10000 # At least 600 please
+    length_poly = 400
     laminar = False
     temp = 400 #Check at different temperatures for lamilar fields, ~10 should be about fine
     field_strength = 1
 
     #Generate a gif? Takes 2-3 minutes more on execution
-    generate_gif = True
+    #Also takes a lot of time to generate images
+    generate_gif = False
 
     #Note: Currently output values (radius of gyration, end to end, etc.) are taken from the last 500 points of execution
     # So it is important to have at least ~700 points in your step (more/less depending on temperature and size of polymer)
