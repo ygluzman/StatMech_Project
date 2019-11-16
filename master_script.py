@@ -13,6 +13,7 @@ from Reptation import reptation
 from end_to_end import end_to_end
 from initialization import init
 import matplotlib.pyplot as plt
+import shutil
 
 img_number = 0
 img_directory = "generated_images"
@@ -74,7 +75,10 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
     n_moves -- number of moves in simulation
     length_poly -- number of monomers in the polymer
     generate_gif -- generate images of each step and make a gif at the end of execution (takes a while)
-    lamilar
+    lamilar -- boolean, lamilar field on or off
+    temp -- temperature, only if lamilar is on
+    field -- field strength, if lamilar is turned on
+    output_directory -- where you would like to output the run
     """
 
     if output_directory == None:
@@ -97,7 +101,9 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
 
     #Initialize polymer and grid
     poly = init(length_poly)
-    grid = imaging.grid(poly)
+
+    if generate_gif == True:
+        grid = imaging.grid(poly)
 
     #Initialize arrays to store energy, gyradius and end2end distance
     energies = np.empty(0)
@@ -157,9 +163,10 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
 
     #Calculate averages and standard deviations of observables from the last 500 moves
     #Edit later base off of observed equilibration time
-    avg_energy, std_energy = avg_std(energies,500)
-    avg_gyradius, std_gyradius = avg_std(gyradii,500)
-    avg_end2end, std_end2end = avg_std(end2ends,500)
+    points_sampled = n_moves//2
+    avg_energy, std_energy = avg_std(energies,points_sampled)
+    avg_gyradius, std_gyradius = avg_std(gyradii,points_sampled)
+    avg_end2end, std_end2end = avg_std(end2ends,points_sampled)
 
     #Print mean and standard deviation to output file
     output_name = output_directory + "/output.txt"
@@ -177,6 +184,17 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
         file.write("\n")
 
         file.write("SIMULATION ACHIEVED" + "\n")
+        file.write("########################" + "\n")
+        file.write("SETTINGS:" + "\n")
+        file.write("Move type: " + move_type + "\n")
+        file.write("Laminar field: ")
+        if lamilar == True:
+            file.write("ON" + "\n")
+            file.write("Field Strength: " + field_strength + "\n")
+        else:
+            file.write("OFF" + "\n")
+
+        file.write("Points Sampled: " + str(points_sampled) + "\n")
         file.write("########################" + "\n")
         file.write("Average energy: " + str(avg_energy) + "\n")
         file.write("Average radius of gyration: " + str(avg_gyradius) + "\n")
@@ -211,14 +229,14 @@ def main():
     ########################
 
     #Define output directory:
-    output_directory = "reptation_test_size20"
+    output_directory = "pivot_test_size400"
 
     #Settings:
-    move_type = 'reptation'
-    n_moves = 1000 # At least 600 please
-    length_poly = 20
-    lamilar = False
-    temp = 20 #Check at different temperatures for lamilar fields, ~10 should be about fine
+    move_type = 'pivot'
+    n_moves = 100 # At least 600 please
+    length_poly = 500
+    laminar = False
+    temp = 400 #Check at different temperatures for lamilar fields, ~10 should be about fine
     field_strength = 1
 
     #Generate a gif? Takes 2-3 minutes more on execution
@@ -234,13 +252,15 @@ def main():
     try:
         os.mkdir(output_directory)
     except FileExistsError:
+        shutil.rmtree(output_directory)
+        os.mkdir(output_directory)
         pass
 
     global img_directory
     img_directory = output_directory + "/generated_images"
 
     #run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None,field=1)
-    run(move_type = move_type ,n_moves = n_moves, length_poly = length_poly, generate_gif = generate_gif, lamilar = lamilar, temp = temp, field = field_strength, output_directory = output_directory)
+    run(move_type = move_type ,n_moves = n_moves, length_poly = length_poly, generate_gif = generate_gif, lamilar = laminar, temp = temp, field = field_strength, output_directory = output_directory)
 
 if __name__ == "__main__":  
     main()
