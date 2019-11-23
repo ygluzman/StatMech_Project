@@ -1,20 +1,21 @@
-#Import libraries
+#Import python libraries
 from PIL import Image, ImageFont, ImageDraw
 import numpy as np
 import os
 import glob
-
-#Import functions 
-import imaging
-from Pivot_algorithm import pivot
-from radius_of_gyration import radius_gyration, radius_of_gyration
-from lamilar import lamilar_test,generate_coblock_charges
-from Reptation import reptation
-from end_to_end import end_to_end
-from initialization import init
 import matplotlib.pyplot as plt
 import shutil
 
+#Import functions we made
+import imaging
+from Pivot_algorithm import pivot
+from radius_of_gyration import radius_of_gyration
+from lamellar import lamellar_test, generate_coblock_charges
+from Reptation import reptation
+from end_to_end import end_to_end
+from initialization import init
+
+#Global variables
 img_number = 0
 img_directory = "generated_images"
 
@@ -73,7 +74,7 @@ def avg_std(array,n_points):
     return avg, std_dev, sem
 
 
-def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None,field=1,output_directory=None):
+def run(move_type,n_moves,length_poly,generate_gif=False,lamellar=False,temp=None,field=1,output_directory=None):
     """
     Runs a simulation with specified move type and number of moves
 
@@ -82,9 +83,9 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
     n_moves -- number of moves in simulation
     length_poly -- number of monomers in the polymer
     generate_gif -- generate images of each step and make a gif at the end of execution (takes a while)
-    lamilar -- boolean, lamilar field on or off
-    temp -- temperature, only if lamilar is on
-    field -- field strength, if lamilar is turned on
+    lamellar -- boolean, lamellar field on or off
+    temp -- temperature, only if lamellar is on
+    field -- field strength, if lamellar is turned on
     output_directory -- where you would like to output the run
     """
 
@@ -101,9 +102,9 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
         print("Move type is not reptation or pivot... exiting")
         exit(1)
 
-    if lamilar == True:
+    if lamellar == True:
         if temp == None:
-            print("Lamilar field requires a temperature. Please specify (temp = ...). Exiting...")
+            print("lamellar field requires a temperature. Please specify (temp = ...). Exiting...")
             exit(1)
 
     #Prepare gif process
@@ -118,10 +119,16 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
 
     #Initialize arrays to store energy, gyradius and end2end distance
     energies = np.empty(0)
-    gyradii = np.empty(0)
-    end2ends = np.empty(0)
 
-    if lamilar == True:
+    gyradii = np.empty(0)
+    gyradii_x = np.empty(0)
+    gyradii_y = np.empty(0)
+
+    end2ends = np.empty(0)
+    end2ends_x = np.empty(0)
+    end2ends_y = np.empty(0)
+
+    if lamellar == True:
         charges = generate_coblock_charges(poly.shape[0])
 
 
@@ -132,8 +139,8 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
     #Run algorithm:
     for i in range(0,n_moves+1):
 
-        #Write original polymer to memory if laminar is on:
-        if lamilar == True:
+        #Write original polymer to memory if lamellar is on:
+        if lamellar == True:
             poly1 = poly
 
         #Make a move:
@@ -142,27 +149,33 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
         else: 
             poly = pivot(poly)
 
-        #If laminar is on, compare energies of original and moved polymers:
-        if lamilar == True:
+        #If lamellar is on, compare energies of original and moved polymers:
+        if lamellar == True:
             poly2 = poly
-            poly, energy = lamilar_test(poly1,poly2,charges,temp,field=field)
+            poly, energy = lamellar_test(poly1,poly2,charges,temp,field=field)
 
         #Calculate observables
-        if lamilar != True:
+        if lamellar != True:
             energy = 0
 
-        gyradius = radius_of_gyration(poly)
-        end2end = end_to_end(poly)
+        gyradius,gyradius_x,gyradius_y = radius_of_gyration(poly)
+        end2end,end2end_x,end2end_y = end_to_end(poly)
 
-        #Append observables to array
+        #Append observables to arrays
         energies = np.append(energies,np.array([energy]))
+
         gyradii = np.append(gyradii,np.array([gyradius]))
+        gyradii_x = np.append(gyradii_x,np.array([gyradius_x]))
+        gyradii_y = np.append(gyradii_y,np.array([gyradius_y]))
+
         end2ends = np.append(end2ends,np.array([end2end]))
+        end2ends = np.append(end2ends_x,np.array([end2end_x]))
+        end2ends = np.append(end2ends_y,np.array([end2end_y]))
 
         #Save images for gif upon request
         if generate_gif == True:
-            if lamilar == True:
-                img = grid.plot_poly(poly,energy=energy,gyradius=np.round(gyradius,2),end2end=np.round(end2end,2),lamilar=True,charges=charges)
+            if lamellar == True:
+                img = grid.plot_poly(poly,energy=energy,gyradius=np.round(gyradius,2),end2end=np.round(end2end,2),lamellar=True,charges=charges)
             else:
                 img = grid.plot_poly(poly,energy=energy,gyradius=np.round(gyradius,2),end2end=np.round(end2end,2))
             save_img(img)
@@ -173,14 +186,26 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
 
     #Generate plots of observables over the algorithm
     plot(energies,"Energy",output_directory)
-    plot(gyradii,"Radius of Gyration",output_directory)
-    plot(end2ends,"End to End Length",output_directory)
 
-    #Calculate avg, std. dev., and sem over the last n/2 points
+    plot(gyradii,"Radius of Gyration",output_directory)
+    plot(gyradii_x,"Radius of Gyration x",output_directory)
+    plot(gyradii_y,"Radius of Gyration y",output_directory)
+
+    plot(end2ends,"End to End Length",output_directory)
+    plot(end2ends_x,"End to End Length x",output_directory)
+    plot(end2ends_y,"End to End Length y",output_directory)
+
+    #Calculate avg, std. dev., and sem of observables over the last n/2 points
     points_sampled = n_moves//2
     avg_energy, std_energy, sem_energy = avg_std(energies,points_sampled)
+
     avg_gyradius, std_gyradius, sem_gyradius = avg_std(gyradii,points_sampled)
+    avg_gyradius_x, std_gyradius_x, sem_gyradius_x = avg_std(gyradii_x,points_sampled)
+    avg_gyradius_y, std_gyradius_y, sem_gyradius_y = avg_std(gyradii_y,points_sampled)
+
     avg_end2end, std_end2end, sem_end2end = avg_std(end2ends,points_sampled)
+    avg_end2end_x, std_end2end_x, sem_end2end_x = avg_std(end2ends_x,points_sampled)
+    avg_end2end_y, std_end2end_y, sem_end2end_y = avg_std(end2ends_y,points_sampled)
 
     ###########################
     #### Write Output File ####
@@ -204,26 +229,49 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamilar=False,temp=None
         file.write("########################" + "\n")
         file.write("SETTINGS:" + "\n")
         file.write("Move type: " + move_type + "\n")
-        file.write("Laminar field: ")
-        if lamilar == True:
+        file.write("lamellar field: ")
+        if lamellar == True:
             file.write("ON" + "\n")
             file.write("Field Strength: " + str(field) + "\n")
         else:
             file.write("OFF" + "\n")
 
         file.write("Points Sampled: " + str(points_sampled) + "\n")
+
         file.write("########################" + "\n")
         file.write("Average energy: " + str(avg_energy) + "\n")
+        file.write("\n")
         file.write("Average radius of gyration: " + str(avg_gyradius) + "\n")
+        file.write("Average radius of gyration x: " + str(avg_gyradius_x) + "\n")
+        file.write("Average radius of gyration y: " + str(avg_gyradius_y) + "\n")
+        file.write("\n")
         file.write("Average end to end: " + str(avg_end2end) + "\n")
+        file.write("Average end to end x: " + str(avg_end2end_x) + "\n")
+        file.write("Average end to end y: " + str(avg_end2end_y) + "\n")
+
         file.write("########################" + "\n")
         file.write("Std deviation of energy: " + str(std_energy) + "\n")
+        file.write("\n")
         file.write("Std deviation of radius of gyration: " + str(std_gyradius) + "\n")
+        file.write("Std deviation of radius of gyration x: " + str(std_gyradius_x) + "\n")
+        file.write("Std deviation of radius of gyration y: " + str(std_gyradius_y) + "\n")
+        file.write("\n")
         file.write("Std deviation of end to end distance: " + str(std_end2end) + "\n")
+        file.write("Std deviation of end to end distance x: " + str(std_end2end_x) + "\n")
+        file.write("Std deviation of end to end distance y: " + str(std_end2end_y) + "\n")
+
         file.write("########################" + "\n")
         file.write("Std error of energy: " + str(sem_energy) + "\n")
+        file.write("\n")
+
         file.write("Std error of radius of gyration: " + str(sem_gyradius) + "\n")
+        file.write("Std error of radius of gyration x: " + str(sem_gyradius_x) + "\n")
+        file.write("Std error of radius of gyration y: " + str(sem_gyradius_y) + "\n")
+
+        file.write("\n")
         file.write("Std error of end to end distance: " + str(sem_end2end) + "\n")
+        file.write("Std error of end to end distance x: " + str(sem_end2end_x) + "\n")
+        file.write("Std error of end to end distance y: " + str(sem_end2end_y) + "\n")
         file.write("########################" + "\n")
         file.write("\n")
 
@@ -255,14 +303,14 @@ def main():
     ########################
 
     #Define output directory:
-    output_directory = "pivot_laminar_1000"
+    output_directory = "pivot_lamellar_1000"
 
     #Settings:
     move_type = 'pivot'
-    n_moves = 1000
-    length_poly = 250
-    laminar = True
-    temp = 10
+    n_moves = 100
+    length_poly = 25
+    lamellar = True
+    temp = 25
     field_strength = 1
 
     #Generate a gif? Takes 2-3 minutes more in execution
@@ -272,6 +320,7 @@ def main():
     # STOP EDITING HERE #
     #####################
 
+    #Remove previous directory of the same name if it exists
     try:
         os.mkdir(output_directory)
     except FileExistsError:
@@ -279,10 +328,12 @@ def main():
         os.mkdir(output_directory)
         pass
 
+    #Set output directory for images
     global img_directory
     img_directory = output_directory + "/generated_images"
 
-    run(move_type = move_type ,n_moves = n_moves, length_poly = length_poly, generate_gif = generate_gif, lamilar = laminar,
+    #Execute the run
+    run(move_type = move_type ,n_moves = n_moves, length_poly = length_poly, generate_gif = generate_gif, lamellar = lamellar,
          temp = temp, field = field_strength, output_directory = output_directory)
 
 

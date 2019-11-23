@@ -1,17 +1,12 @@
 from PIL import Image, ImageFont, ImageDraw
 import numpy as np
 
-#Import test
-# import double_func_test
-# from double_func_test import double
-# print(double_func_test.double(2),double(2))
-
 class grid:
     
     """
     Grid Class
     Initializes with a polymer. E.g. x=grid(poly)
-    Makes a grid centered on the CoM of a polymer with height and width 4x
+    Makes a grid centered on the CoM of a polymer with height and width 2.5x
     the distance of the furthest point from the CoM
     
     Plot polymers with method self.plot_poly
@@ -24,8 +19,6 @@ class grid:
     self.pixels_between_gridpoints -- number of pixels from one gridpoint to another
     self.CoIm -- a grid point near the center of the pixel array
     
-    #Unused
-    self.CoM -- previous center of mass (was used for continuity between images)
     """
     
     def make_grid(self,polymer):
@@ -68,7 +61,6 @@ class grid:
 
         #Assign blank grid, CoM, and CoIm
         self.blank_grid = img
-        self.CoM = CoM
         self.pixels= self.blank_grid.load()
         self.pixels_between_gridpoints = periodicity
         self.CoIm = [int(size_of_grid//2*self.pixels_between_gridpoints),int(size_of_grid//2*self.pixels_between_gridpoints)]
