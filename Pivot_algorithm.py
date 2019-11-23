@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-
 import numpy as np
 
 def pivot(polymer):
+    """
+    Makes a pivot move on a polymer, checks for overlap, then returns original or accepted polymer
+    """
+
     n= len(polymer)
     pivotp = np.random.randint(n-1)+1 # point about which it pivots
     angle = np.random.randint(3) # angle of the rotation 0=90 , 1 = -90, 2 = 180

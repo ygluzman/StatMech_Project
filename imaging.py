@@ -24,8 +24,8 @@ class grid:
     def make_grid(self,polymer):
         """
         Initializes with a polymer. E.g. x=grid(poly)
-        Makes a grid centered on the CoM
-        with height and width 4x the distance of the furthest point from the CoM
+        Makes a grid centered on the CoM of a polymer with height and width 2.5x
+        the distance of the furthest point from the CoM
         """
 
         poly = polymer
@@ -66,14 +66,20 @@ class grid:
         self.CoIm = [int(size_of_grid//2*self.pixels_between_gridpoints),int(size_of_grid//2*self.pixels_between_gridpoints)]
 
     def write(self,text,x,y):
+        """
+        Draws text at position x,y
+        """
         color = 'rgb(0, 0, 0)' # black color
         font = ImageFont.truetype('./fonts/OpenSans-Regular.ttf', 18) #load the font
         draw = ImageDraw.Draw(self.blank_grid)
         pos = (x,y)
-        draw.text(pos, text, fill=color, font=font)
+        draw.text(pos, text, fill=color, font=font) #draw
     
     def write_info(self,energy,gyradius,end2end):
-        
+        """
+        Writes observables in upper left of image
+        """
+
         #Draw a rectangle on the grid
         xstart=25
         xstop=225
@@ -89,6 +95,8 @@ class grid:
         spacing = 50
         x=30
         y=30
+
+        #Write the info
         if energy != None:
             self.write("Energy: " + str(np.round(energy,5)),x,y)
         else:
@@ -103,16 +111,18 @@ class grid:
             self.write("End to End: None",x,y+2*spacing)
 
 
-    def plot_poly(self,polymer,energy=None,gyradius=None,end2end=None,info=True,lamilar=False,charges=None):
+    def plot_poly(self,polymer,energy=None,gyradius=None,end2end=None,info=True,lamellar=False,charges=None):
         """
         Takes a polymer array, returns the polymer plotted onto a grid as an image
-        Centered around the midpoint of the polymer
+        centered around the midpoint of the polymer
 
-        If lamilar=True, will show polymer in color
+        If lamellar=True, will show polymer in color
         Must also pass a "charges" argument
         Positive --> Blue
         Negative --> Red
         Neutral --> Black
+
+        Returns image of polymer plotted on self.blank_grid
         """
         
         if info == True:
@@ -135,7 +145,7 @@ class grid:
         midpoint = polymer[int(polymer.shape[0]//2)]
         poly = polymer-midpoint
         
-        #Make pixel locations
+        #Make pixel locations of polymer points
         pixel_locations = np.empty([len(poly),2])
         pixel_locations[:,0] = self.CoIm[0]
         pixel_locations[:,1] = self.CoIm[1]
@@ -154,8 +164,8 @@ class grid:
             loc_x = pixel_locations[atom_number][0]
             loc_y = pixel_locations[atom_number][1]
 
-            #If lamilar = true, define the color
-            if lamilar == True:
+            #If lamellar = true, define the color
+            if lamellar == True:
                 if charges[atom_number] > 0:
                     color_of_square = blue
                 elif charges[atom_number] < 0:
@@ -171,7 +181,7 @@ class grid:
 #                     print(loc_x+i,loc_y+j)
                     pixels[loc_x + i, loc_y + j] = color_of_square
              
-            #Connect the dots! lol
+            #Connect the dots!
             if atom_number != len(poly)-1:
                 #The next point will either be to the left, right, up, or down
                 #We want to fill in the pixels in-between
@@ -203,21 +213,21 @@ class grid:
         
 #Testing
 
-def main():
-    poly=np.array([0,0])
-    length=25
-    for i in range(1,int(length/2+1)):
-        poly = np.vstack((poly,[i,0]))
-    for i in [i for i in range(-(int(length/2)),0)][::-1]: #from -5 to zero backwards
-        poly = np.vstack(([i,0],poly))
+# def main():
+#     poly=np.array([0,0])
+#     length=25
+#     for i in range(1,int(length/2+1)):
+#         poly = np.vstack((poly,[i,0]))
+#     for i in [i for i in range(-(int(length/2)),0)][::-1]: #from -5 to zero backwards
+#         poly = np.vstack(([i,0],poly))
 
-    test_grid = grid(poly)
-    img = test_grid.plot_poly(poly)
-    img.show()
+#     test_grid = grid(poly)
+#     img = test_grid.plot_poly(poly)
+#     img.show()
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 
 
 

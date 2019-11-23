@@ -9,11 +9,9 @@ import shutil
 #Import functions we made
 import imaging
 from Pivot_algorithm import pivot
-from radius_of_gyration import radius_of_gyration
-from lamellar import lamellar_test, generate_coblock_charges
 from Reptation import reptation
-from end_to_end import end_to_end
-from initialization import init
+from lamellar import lamellar_test, generate_coblock_charges
+from misc import end_to_end, radius_of_gyration, init
 
 #Global variables
 img_number = 0
@@ -169,8 +167,8 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamellar=False,temp=Non
         gyradii_y = np.append(gyradii_y,np.array([gyradius_y]))
 
         end2ends = np.append(end2ends,np.array([end2end]))
-        end2ends = np.append(end2ends_x,np.array([end2end_x]))
-        end2ends = np.append(end2ends_y,np.array([end2end_y]))
+        end2ends_x = np.append(end2ends_x,np.array([end2end_x]))
+        end2ends_y = np.append(end2ends_y,np.array([end2end_y]))
 
         #Save images for gif upon request
         if generate_gif == True:
@@ -229,13 +227,14 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamellar=False,temp=Non
         file.write("########################" + "\n")
         file.write("SETTINGS:" + "\n")
         file.write("Move type: " + move_type + "\n")
-        file.write("lamellar field: ")
+        file.write("Lamellar field: ")
         if lamellar == True:
             file.write("ON" + "\n")
             file.write("Field Strength: " + str(field) + "\n")
         else:
             file.write("OFF" + "\n")
 
+        file.write("Moves in Simualation: " + str(n_moves) + "\n")
         file.write("Points Sampled: " + str(points_sampled) + "\n")
 
         file.write("########################" + "\n")
@@ -303,18 +302,18 @@ def main():
     ########################
 
     #Define output directory:
-    output_directory = "pivot_lamellar_1000"
+    output_directory = "test_output"
 
     #Settings:
-    move_type = 'pivot'
+    move_type = 'reptation'
     n_moves = 100
-    length_poly = 25
+    length_poly = 50
     lamellar = True
-    temp = 25
+    temp = 50
     field_strength = 1
 
     #Generate a gif? Takes 2-3 minutes more in execution
-    generate_gif = False
+    generate_gif = True
 
     #####################
     # STOP EDITING HERE #
