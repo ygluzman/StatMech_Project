@@ -432,7 +432,7 @@ def main():
     #Settings:
     move_type = 'pivot'
     n_moves = 100
-    length_poly = 100
+    length_poly = 10000
     lamellar = False
     temp = 50
     field_strength = 1
