@@ -426,16 +426,16 @@ def main():
     output_directory = "test_output"
 
     #Settings:
-    move_type = 'reptation'
+    move_type = 'pivot'
     n_moves = 100
-    length_poly = 50
-    lamellar = True
+    length_poly = 100
+    lamellar = False
     temp = 50
     field_strength = 1
-    n_sims = 5
+    n_sims = 1
 
     #Generate a gif? Takes 2-3 minutes more in execution
-    generate_gif = False
+    generate_gif = True
 
     #####################
     # STOP EDITING HERE #
