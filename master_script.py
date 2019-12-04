@@ -309,6 +309,10 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamellar=False,temp=Non
         make_gif(n_moves,output_directory)
 
 def multi_run(n_sims,move_type,n_moves,length_poly,generate_gif=False,lamellar=False,temp=None,field=1,output_directory=None):
+    """
+    Calls n_sims runs with variables specified in main, then groups results into summary text files.
+    See "run" function for more details.
+    """
     
     #Global variables to get from sims:
     energies = np.empty(0)
@@ -432,10 +436,10 @@ def main():
     lamellar = False
     temp = 50
     field_strength = 1
-    n_sims = 1
+    n_sims = 5
 
     #Generate a gif? Takes 2-3 minutes more in execution
-    generate_gif = True
+    generate_gif = False
 
     #####################
     # STOP EDITING HERE #
