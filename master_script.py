@@ -305,7 +305,7 @@ def run(move_type,n_moves,length_poly,generate_gif=False,lamellar=False,temp=Non
     #######################
 
     if generate_gif:
-        print("Simualation done! Generating gif (this might take a while (2-3 minutes))...")
+        print("Simulation done! Generating gif (this might take a while (2-3 minutes))...")
         make_gif(n_moves,output_directory)
 
 def multi_run(n_sims,move_type,n_moves,length_poly,generate_gif=False,lamellar=False,temp=None,field=1,output_directory=None):
@@ -427,16 +427,16 @@ def main():
     ########################
 
     #Define output directory:
-    output_directory = "test_output"
+    output_directory = "test_output_2"
 
     #Settings:
-    move_type = 'pivot'
-    n_moves = 10000
+    move_type = 'reptation'
+    n_moves = 100000
     length_poly = 100
     lamellar = False
     temp = 50
     field_strength = 1
-    n_sims = 5
+    n_sims = 1
 
     #Generate a gif? Takes 2-3 minutes more in execution
     generate_gif = False
